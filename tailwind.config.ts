@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				music: {
+					100: '#f3e8ff',  // Very light purple
+					200: '#e9d5ff',  // Light purple
+					300: '#d8b4fe',  // Medium-light purple
+					400: '#c084fc',  // Medium purple
+					500: '#a855f7',  // Primary purple
+					600: '#9333ea',  // Darker purple
+					700: '#7e22ce',  // Deep purple
+					800: '#6b21a8',  // Very dark purple
+					900: '#581c87',  // Extremely dark purple
 				}
 			},
 			borderRadius: {
@@ -84,11 +96,30 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' }
+				},
+				'pulse-subtle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.8' }
+				},
+				'slide-up': {
+					'0%': { transform: 'translateY(20px)', opacity: '0' },
+					'100%': { transform: 'translateY(0)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'float': 'float 6s ease-in-out infinite',
+				'pulse-subtle': 'pulse-subtle 3s ease-in-out infinite',
+				'slide-up': 'slide-up 0.6s ease-out'
+			},
+			backgroundImage: {
+				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+				'music-pattern': "url('/music-pattern.svg')"
 			}
 		}
 	},
