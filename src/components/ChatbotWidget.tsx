@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { MessageCircle, X, Send, Music } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { toast } from '@/components/ui/sonner';
 
 interface Message {
   id: string;
@@ -12,6 +13,10 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
 }
+
+// Gemini API configuration
+const GEMINI_API_KEY = "AIzaSyBBzm-oHelkUbZMGli4bj6hgrhw8Uq7NRY";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 const ChatbotWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,8 +35,49 @@ const ChatbotWidget = () => {
   const toggleChat = () => {
     setIsOpen(!isOpen);
   };
+
+  // Function to call Gemini API
+  const callGeminiAPI = async (userMessage: string) => {
+    try {
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are a helpful, friendly Music Theory Tutor AI. The user is asking: ${userMessage}. 
+                  Focus your response on music theory concepts. If the question is not about music theory,
+                  politely redirect the conversation back to music theory topics like scales, chords, 
+                  intervals, harmony, rhythm, or reading sheet music. Keep your response concise (under 200 words).`
+                }
+              ]
+            }
+          ]
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Extract the response text from the data
+      const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || 
+        "I'm having trouble connecting to my knowledge base right now. Could you try asking me something else about music theory?";
+      
+      return aiResponseText;
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      return "Sorry, I encountered an issue processing your request. Let's try again with a different question about music theory.";
+    }
+  };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() === '') return;
     
@@ -47,39 +93,33 @@ const ChatbotWidget = () => {
     setInput('');
     setIsTyping(true);
     
-    // Simulate AI response with delay
-    setTimeout(() => {
-      let response = '';
-      const userText = input.toLowerCase();
-      
-      if (userText.includes('beginner') || userText.includes('start')) {
-        response = "Great! For beginners, I recommend starting with the basics of reading sheet music and understanding basic note values. Would you like me to explain that first, or would you prefer to start with another topic?";
-      } else if (userText.includes('chord') || userText.includes('chords')) {
-        response = "Chords are groups of notes played together. The most basic chord is the triad, which consists of three notes: the root, third, and fifth. For example, a C major triad contains C, E, and G. Would you like to learn about different chord types?";
-      } else if (userText.includes('scale') || userText.includes('scales')) {
-        response = "Scales are sequences of notes organized by pitch. The most common scale is the major scale, which follows the pattern: whole, whole, half, whole, whole, whole, half step. For example, the C major scale is C, D, E, F, G, A, B, C. Would you like to explore other scales?";
-      } else if (userText.includes('interval') || userText.includes('intervals')) {
-        response = "Intervals are the distances between notes. We measure them by counting the number of steps on the staff. For example, from C to E is a major third. Intervals are crucial for understanding harmony and melody. What specific intervals would you like to know about?";
-      } else if (userText.includes('rhythm') || userText.includes('beat') || userText.includes('time')) {
-        response = "Rhythm refers to the pattern of time in music. It involves note durations, rests, and time signatures. The most common time signature is 4/4, which means there are 4 beats per measure and a quarter note gets 1 beat. Would you like to learn about note values or time signatures?";
-      } else if (userText.includes('note') || userText.includes('read') || userText.includes('sheet')) {
-        response = "Reading sheet music involves understanding the five-line staff, clefs, notes, and their positions. Notes on lines and spaces represent different pitches. In the treble clef, the lines from bottom to top are E, G, B, D, F ('Every Good Boy Does Fine'), and the spaces spell FACE. Would you like more details about reading music notation?";
-      } else if (userText.includes('hello') || userText.includes('hi') || userText.includes('hey')) {
-        response = "Hello! I'm your AI Music Theory Tutor. What's your current level of music theory knowledge? (beginner, intermediate, advanced) This will help me tailor my explanations for you.";
-      } else {
-        response = "That's an interesting topic! I can help you understand music theory concepts like scales, chords, intervals, rhythm, or reading sheet music. What specific aspect would you like me to explain?";
-      }
+    try {
+      // Get AI response from Gemini
+      const aiResponse = await callGeminiAPI(input);
       
       const aiMessage: Message = {
         id: Date.now().toString(),
-        content: response,
+        content: aiResponse,
         isUser: false,
         timestamp: new Date(),
       };
       
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error in chat completion:", error);
+      toast.error("Failed to get a response. Please try again.");
+      
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: "I'm having trouble connecting to my knowledge base. Let's try again with a different question about music theory.",
+        isUser: false,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
   
   useEffect(() => {
